@@ -1,11 +1,12 @@
 package main
 
 import (
-  "testing"
-  "io/ioutil"
-  "os"
-  "fmt"
+	"BiteMeCertManager/testhelpers"
+	"os"
+	"testing"
 )
+
+const invalidCert = "freaking bollocks everywhere"
 
 const cert = `-----BEGIN CERTIFICATE-----
 MIIF4zCCA8ugAwIBAgICEAEwDQYJKoZIhvcNAQELBQAwgYkxCzAJBgNVBAYTAkdC
@@ -43,27 +44,26 @@ Ke6vGPfqT9NV6XgCls6Kra/toU4qwOI=
 -----END CERTIFICATE-----`
 
 func TestMain(m *testing.M) {
-  err := ioutil.WriteFile("./test.cert.pem", []byte(cert), 0777)
-  if err != nil {
-    fmt.Println("Could not write test cert")
-    os.Exit(1)
-  }
+	testhelpers.WriteFile("./test.cert.pem", cert)
+	testhelpers.WriteFile("./invalid.cert.pem", invalidCert)
 
-  exitCode := m.Run()
+	exitCode := m.Run()
 
-  err1 := os.Remove("./test.cert.pem")
-  if err1 != nil {
-    fmt.Println("Could not remove the test file because: ", err)
-    os.Exit(1)
-  }
+	testhelpers.RemoveFile("./test.cert.pem")
+	testhelpers.RemoveFile("./invalid.cert.pem")
 
-  os.Exit(exitCode)
+	os.Exit(exitCode)
 }
 
 func TestCertCanBeLoaded(t *testing.T) {
-  loadedCert := loadPEMCert("./test.cert.pem")
+	loadedCert := loadPEMCert("./test.cert.pem")
 
-  if loadedCert == nil {
-    t.Errorf("Certificate could not be loaded.")
-  }
+	if loadedCert == nil {
+		t.Errorf("Certificate could not be loaded.")
+	}
+}
+
+func TestPanicsIfInvalidCertIsPassedIn(t *testing.T) {
+	defer testhelpers.AssertPanic(t, "Kok")
+	loadPEMCert("./invalid.cert.pem")
 }
